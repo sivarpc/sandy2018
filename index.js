@@ -8,12 +8,32 @@ const app = express();
 const cors = require('cors')
 const corsOptions = {
     // origin: true,
-    allowedHeaders: ['Content-Type', 'x-access-token']
+    allowedHeaders: ['Content-Type', 'sandywhms-access-token']
 };
 
+const fs = require('fs')
+const morgan = require('morgan')
+const path = require('path')
+var rfs = require('rotating-file-stream')
 
 // cors
 app.use(cors(corsOptions));
+
+var logDirectory = path.join(__dirname, 'log')
+
+// ensure log directory exists
+fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory)
+
+// create a rotating write stream
+var accessLogStream = rfs('access.log', {
+  interval: '1d', // rotate daily
+  path: logDirectory
+})
+// create a write stream (in append mode)
+// var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), {flags: 'a'})
+
+// setup the logger
+app.use(morgan('combined', {stream: accessLogStream}))
 
 // create user session - NO AUTHENTICATION REQUIRED
 app.use((req, res, next)=>{
@@ -22,7 +42,7 @@ app.use((req, res, next)=>{
 })
 
 // api/databases
-app.use('/api', (req, res, next)=> {
+app.use('/api/', (req, res, next)=> {
     return res.json({error:"", data: "", message: "hello world"})
 });
 
